@@ -5,14 +5,13 @@ import AudioPlayerModuleiOS
 
 protocol RootTabBarViewDelegate {
     func onOpen()
-    func onClose()
 }
 
-class RootTabBarController: UITabBarController {
+final class RootTabBarController: UITabBarController {
     private let playerHeight = 60.0
-    private var stickyAudioPlayerController: StickyAudioPlayerViewController?
+    private(set) var stickyAudioPlayerController: StickyAudioPlayerViewController?
     var viewDelegate: RootTabBarViewDelegate?
-    
+        
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
@@ -25,8 +24,8 @@ class RootTabBarController: UITabBarController {
         self.init(nibName: nil, bundle: nil)
         self.stickyAudioPlayerController = stickyAudioPlayerController
         self.viewDelegate = viewDelegate
+        setPlayerControllerAsChild()
         viewDelegate.onOpen()
-        self.configureAudioPlayer()
     }
     
     override func viewDidLoad() {
@@ -40,14 +39,11 @@ class RootTabBarController: UITabBarController {
         extendedLayoutIncludesOpaqueBars = true
     }
     
-    deinit {
-        viewDelegate?.onClose()
-    }
-    
-    private func configureAudioPlayer() {
+    private func setPlayerControllerAsChild() {
         guard let stickyAudioPlayerController = stickyAudioPlayerController, let playerView = stickyAudioPlayerController.view else { return }
-        self.addChild(stickyAudioPlayerController)
         self.view.addSubview(playerView)
+        self.addChild(stickyAudioPlayerController)
+        stickyAudioPlayerController.didMove(toParent: self)
         playerView.backgroundColor = .secondarySystemBackground.withAlphaComponent(0.4)
         playerView.translatesAutoresizingMaskIntoConstraints = false
         playerView.isHidden = true

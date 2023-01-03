@@ -15,7 +15,7 @@ import AVPlayerClient
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     
     var window: UIWindow?
-        
+    
     private lazy var baseURL: URL = {
         URL(string: "https://listen-api-test.listennotes.com")!
     }()
@@ -31,17 +31,29 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
                 .appendingPathComponent("genres-store.sqlite")
         )
     }()
-        
+    
+    private lazy var playbackProgressStore: PlaybackProgressStore = {
+        try! CoreDataPlaybackProgressStore(
+            storeURL: NSPersistentContainer
+                .defaultDirectoryURL()
+                .appendingPathComponent("playback-progress-store.sqlite")
+        )
+    }()
+    
     private lazy var localGenresLoader: LocalGenresLoader = {
         LocalGenresLoader(store: genresStore, currentDate: Date.init)
+    }()
+    
+    private lazy var localPlaybackProgressLoader: LocalPlaybackProgressLoader = {
+        LocalPlaybackProgressLoader(store: playbackProgressStore, currentDate: Date.init)
     }()
     
     var audioPlayer: AudioPlayer = {
         AVPlayerClient()
     }()
     
-    var audioPlayerStatePublisher: AudioPlayerStatePublisher = {
-        AudioPlayerStatePublisher()
+    private lazy var audioPlayerStatePublishers: AudioPlayerStatePublishers = {
+        AudioPlayerStatePublishers(playbackProgressCache: localPlaybackProgressLoader)
     }()
     
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
@@ -55,10 +67,11 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         localGenresLoader.validateCache()
     }
     
-    convenience init(httpClient: HTTPClient, genresStore: GenresStore) {
+    convenience init(httpClient: HTTPClient, genresStore: GenresStore, playbackProgressStore: PlaybackProgressStore) {
         self.init()
         self.httpClient = httpClient
         self.genresStore = genresStore
+        self.playbackProgressStore = playbackProgressStore
     }
     
     func configureWindow() {
@@ -74,11 +87,13 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             httpClient: httpClient,
             localGenresLoader: localGenresLoader,
             audioPlayer: audioPlayer,
-            audioPlayerStatePublisher: audioPlayerStatePublisher
+            audioPlayerStatePublishers: audioPlayerStatePublishers,
+            playbackProgressCache: localPlaybackProgressLoader,
+            localPlaybackProgressLoader: localPlaybackProgressLoader.loadPublisher
         )
         return root
     }
-        
+    
     private func globalAppearanceSetup() {
         if #available(iOS 15.0, *) {
             UITableView.appearance().isPrefetchingEnabled = false
@@ -86,6 +101,6 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
     
     private func composeAudioPlayerWithStatePublisher() {
-        audioPlayer.delegate = audioPlayerStatePublisher
+        audioPlayer.delegate = audioPlayerStatePublishers
     }
 }

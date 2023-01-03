@@ -11,13 +11,13 @@ import AudioPlayerModuleiOS
 public enum LargeAudioPlayerUIComposer {
     
     public static func playerWith(
-        statePublisher: AudioPlayerStatePublisher,
+        audioPlayerstatePublishers: AudioPlayerStatePublishers,
         controlsDelegate: AudioPlayerControlsDelegate,
         imageLoader: @escaping (URL) -> AnyPublisher<Data, Error>
     ) -> LargeAudioPlayerViewController {
         let (thumbnailViewController, thumbnailSourceDelegate) = ThumbnailUIComposer.composeThumbnailWithDynamicImageLoader(imageLoader: imageLoader)
         let presentationAdapter = LargeAudioPlayerPresentationAdapter(
-            statePublisher: statePublisher,
+            audioPlayerstatePublishers: audioPlayerstatePublishers,
             thumbnaiSourceDelegate: thumbnailSourceDelegate
         )
         

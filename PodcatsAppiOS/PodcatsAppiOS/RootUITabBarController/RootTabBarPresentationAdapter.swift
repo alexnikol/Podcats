@@ -1,35 +1,58 @@
 // Copyright © 2022 Almost Engineer. All rights reserved.
 
-
 import Foundation
+import Combine
 import AudioPlayerModule
 import AudioPlayerModuleiOS
 
 class RootTabBarPresentationAdapter {
-    private let statePublisher: AudioPlayerStatePublisher
-    private var subscription: AudioPlayerStateSubscription?
+    private let audioPlayerStatePublishers: AudioPlayerStatePublishers
+    private let audioPlayer: AudioPlayer
     var presenter: RootTabBarPresenter?
     private var isStickyPlayerVisible = false
+    private let playbackProgressLoader: () -> LocalPlaybackProgressLoader.Publisher
+    private let playbackProgressCache: PlaybackProgressCache
+    private var subscriptions = Set<AnyCancellable>()
     
-    init(statePublisher: AudioPlayerStatePublisher) {
-        self.statePublisher = statePublisher
+    init(audioPlayer: AudioPlayer,
+         audioPlayerStatePublishers: AudioPlayerStatePublishers,
+         playbackProgressCache: PlaybackProgressCache,
+         playbackProgressLoader: @escaping () -> LocalPlaybackProgressLoader.Publisher) {
+        self.audioPlayerStatePublishers = audioPlayerStatePublishers
+        self.audioPlayer = audioPlayer
+        self.playbackProgressLoader = playbackProgressLoader
+        self.playbackProgressCache = playbackProgressCache
     }
 }
 
 extension RootTabBarPresentationAdapter: RootTabBarViewDelegate {
     
     func onOpen() {
-        subscription = statePublisher.subscribe(observer: self)
-    }
-    
-    func onClose() {
-        subscription?.unsubscribe()
+        playbackProgressLoader()
+            .sink(
+                receiveCompletion: { _ in },
+                receiveValue: { [weak self] playerState in
+                    self?.audioPlayer.preparePlayback(
+                        fromURL: playerState.episode.audio,
+                        withPlayingItem: playerState
+                    )
+                }
+            ).store(in: &subscriptions)
+        
+        
+        audioPlayerStatePublishers.audioPlayerStatePublisher
+            .dispatchOnMainQueue()
+            .sink(
+                receiveValue: { [weak self] playerState in
+                    self?.updateStickyPlayerState(playerState)
+                })
+            .store(in: &subscriptions)
     }
 }
 
-extension RootTabBarPresentationAdapter: AudioPlayerObserver {
+private extension RootTabBarPresentationAdapter {
     
-    func receive(_ playerState: PlayerState) {
+    func updateStickyPlayerState(_ playerState: PlayerState) {
         switch playerState {
         case .noPlayingItem:
             updateStickyPlayer(isVisible: false)
@@ -40,16 +63,12 @@ extension RootTabBarPresentationAdapter: AudioPlayerObserver {
         case .startPlayingNewItem:
             updateStickyPlayer(isVisible: true)
         }
-        
-        func updateStickyPlayer(isVisible: Bool) {
-            if isVisible != isStickyPlayerVisible {
-                isStickyPlayerVisible = isVisible
-                DispatchQueue.immediateWhenOnMainQueueScheduler.schedule { [weak self] in
-                    isVisible ? self?.presenter?.showStickyPlayer() : self?.presenter?.hideStickyPlayer()
-                }
-            }
-        }
     }
     
-    func prepareForSeek(_ progress: AudioPlayerModule.PlayingItem.Progress) {}
+    func updateStickyPlayer(isVisible: Bool) {
+        if isVisible != isStickyPlayerVisible {
+            isStickyPlayerVisible = isVisible
+            isVisible ? presenter?.showStickyPlayer() : presenter?.hideStickyPlayer()
+        }
+    }
 }

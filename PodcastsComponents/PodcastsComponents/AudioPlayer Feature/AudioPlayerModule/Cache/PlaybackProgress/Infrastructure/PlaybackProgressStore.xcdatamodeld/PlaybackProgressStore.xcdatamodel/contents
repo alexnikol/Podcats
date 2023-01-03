@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="21512" systemVersion="21G217" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+    <entity name="ManagedDuration" representedClassName="ManagedDuration" isAbstract="YES" syncable="YES">
+        <relationship name="cache" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ManagedProgress" inverseName="totalTime" inverseEntity="ManagedProgress"/>
+    </entity>
+    <entity name="ManagedDurationNotDefined" representedClassName="ManagedDurationNotDefined" parentEntity="ManagedDuration" syncable="YES"/>
+    <entity name="ManagedDurationWithValue" representedClassName="ManagedDurationWithValue" parentEntity="ManagedDuration" syncable="YES">
+        <attribute name="value" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+    </entity>
+    <entity name="ManagedEpisode" representedClassName="ManagedEpisode" syncable="YES">
+        <attribute name="audio" attributeType="URI"/>
+        <attribute name="id" attributeType="String"/>
+        <attribute name="publishDateInMiliseconds" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="thumbnail" attributeType="URI"/>
+        <attribute name="title" attributeType="String"/>
+        <relationship name="cached" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ManagedPlaybackProgress" inverseName="episode" inverseEntity="ManagedPlaybackProgress"/>
+    </entity>
+    <entity name="ManagedPlaybackProgress" representedClassName="ManagedPlaybackProgress" syncable="YES">
+        <relationship name="cached" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ManagedPlaybackProgressStoreCache" inverseName="playbackProgress" inverseEntity="ManagedPlaybackProgressStoreCache"/>
+        <relationship name="episode" maxCount="1" deletionRule="Nullify" destinationEntity="ManagedEpisode" inverseName="cached" inverseEntity="ManagedEpisode"/>
+        <relationship name="podcast" maxCount="1" deletionRule="Nullify" destinationEntity="ManagedPodcast" inverseName="cached" inverseEntity="ManagedPodcast"/>
+        <relationship name="updates" optional="YES" toMany="YES" deletionRule="Nullify" ordered="YES" destinationEntity="ManagedUpdateState" inverseName="cached" inverseEntity="ManagedUpdateState"/>
+    </entity>
+    <entity name="ManagedPlaybackProgressStoreCache" representedClassName="ManagedPlaybackProgressStoreCache" syncable="YES">
+        <attribute name="timestamp" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <relationship name="playbackProgress" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ManagedPlaybackProgress" inverseName="cached" inverseEntity="ManagedPlaybackProgress"/>
+    </entity>
+    <entity name="ManagedPlaybackState" representedClassName="ManagedPlaybackState" parentEntity="ManagedUpdateState" syncable="YES">
+        <attribute name="value" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+    </entity>
+    <entity name="ManagedPodcast" representedClassName="ManagedPodcast" syncable="YES">
+        <attribute name="id" attributeType="String"/>
+        <attribute name="publisher" attributeType="String"/>
+        <attribute name="title" attributeType="String"/>
+        <relationship name="cached" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ManagedPlaybackProgress" inverseName="podcast" inverseEntity="ManagedPlaybackProgress"/>
+    </entity>
+    <entity name="ManagedProgress" representedClassName="ManagedProgress" parentEntity="ManagedUpdateState" syncable="YES">
+        <attribute name="currentTimeInSeconds" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="progressTimePercentage" attributeType="Float" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <relationship name="totalTime" maxCount="1" deletionRule="Nullify" destinationEntity="ManagedDuration" inverseName="cache" inverseEntity="ManagedDuration"/>
+    </entity>
+    <entity name="ManagedStateSpeed" representedClassName="ManagedStateSpeed" parentEntity="ManagedUpdateState" syncable="YES">
+        <attribute name="value" optional="YES" attributeType="Float" defaultValueString="0.0" usesScalarValueType="YES"/>
+    </entity>
+    <entity name="ManagedStateVolume" representedClassName="ManagedStateVolume" parentEntity="ManagedUpdateState" syncable="YES">
+        <attribute name="value" optional="YES" attributeType="Float" defaultValueString="0.0" usesScalarValueType="YES"/>
+    </entity>
+    <entity name="ManagedUpdateState" representedClassName="ManagedUpdateState" isAbstract="YES" syncable="YES">
+        <relationship name="cached" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ManagedPlaybackProgress" inverseName="updates" inverseEntity="ManagedPlaybackProgress"/>
+    </entity>
+</model>

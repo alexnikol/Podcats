@@ -6,7 +6,7 @@ import AudioPlayerModule
 
 extension XCTestCase {
     
-    func makeUniqueEpisode(audioLengthInSeconds: Int = 100) -> PlayingEpisode {
+    func makeUniqueEpisode() -> PlayingEpisode {
         let publishDateInMiliseconds = Int(1670914583549)
         let episode = PlayingEpisode(
             id: UUID().uuidString,

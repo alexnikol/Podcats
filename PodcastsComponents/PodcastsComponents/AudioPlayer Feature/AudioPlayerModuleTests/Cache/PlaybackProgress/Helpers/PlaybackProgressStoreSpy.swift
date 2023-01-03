@@ -3,7 +3,7 @@
 import Foundation
 import AudioPlayerModule
 
-class PlaybackProgressStoreSpy: PlaybackProgressStore {
+final class PlaybackProgressStoreSpy: PlaybackProgressStore {
     enum Message: Equatable {
         case deleteCache
         case insert(LocalPlayingItem, Date)

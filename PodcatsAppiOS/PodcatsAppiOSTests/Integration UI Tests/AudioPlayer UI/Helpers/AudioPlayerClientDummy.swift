@@ -3,7 +3,7 @@
 import Foundation
 import AudioPlayerModule
 
-class AudioPlayerClientDummy: AudioPlayer {
+final class AudioPlayerClientDummy: AudioPlayer {
     var isPlaying = false
     
     func play() {}
@@ -19,6 +19,7 @@ class AudioPlayerClientDummy: AudioPlayer {
     }
     
     func startPlayback(fromURL url: URL, withMeta meta: AudioPlayerModule.Meta) {}
+    func preparePlayback(fromURL url: URL, withPlayingItem playingItem: AudioPlayerModule.PlayingItem) {}
     func changeSpeedPlaybackTo(value: AudioPlayerModule.PlaybackSpeed) {}
     func prepareForSeek(_ progress: Float) {}
 }

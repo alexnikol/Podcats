@@ -1,18 +1,19 @@
 // Copyright © 2022 Almost Engineer. All rights reserved.
 
 import Foundation
+import Combine
 import SharedComponentsiOSModule
 import AudioPlayerModule
 import AudioPlayerModuleiOS
 
 class LargeAudioPlayerPresentationAdapter {
     private var thumbnaiSourceDelegate: ThumbnailSourceDelegate?
-    private let statePublisher: AudioPlayerStatePublisher
-    private var subscription: AudioPlayerStateSubscription?
+    private let audioPlayerstatePublishers: AudioPlayerStatePublishers
+    private var subscriptions = Set<AnyCancellable>()
     var presenter: LargeAudioPlayerPresenter?
     
-    init(statePublisher: AudioPlayerStatePublisher, thumbnaiSourceDelegate: ThumbnailSourceDelegate) {
-        self.statePublisher = statePublisher
+    init(audioPlayerstatePublishers: AudioPlayerStatePublishers, thumbnaiSourceDelegate: ThumbnailSourceDelegate) {
+        self.audioPlayerstatePublishers = audioPlayerstatePublishers
         self.thumbnaiSourceDelegate = thumbnaiSourceDelegate
     }
 }
@@ -20,21 +21,31 @@ class LargeAudioPlayerPresentationAdapter {
 extension LargeAudioPlayerPresentationAdapter: LargeAudioPlayerViewDelegate {
     
     func onOpen() {
-        subscription = statePublisher.subscribe(observer: self)
+        audioPlayerstatePublishers.audioPlayerStatePublisher
+            .dispatchOnMainQueue()
+            .sink(
+                receiveValue: { [weak self] playerState in
+                    self?.updatePlayerState(playerState)
+                })
+            .store(in: &subscriptions)
+        
+        audioPlayerstatePublishers.audioPlayerPrepareForSeekPublisher
+            .dispatchOnMainQueue()
+            .sink(
+                receiveValue: { [weak self] seekProgress in
+                    self?.prepareForSeek(seekProgress)
+                })
+            .store(in: &subscriptions)
     }
-    
-    func onClose() {
-        subscription?.unsubscribe()
-    }
-    
+        
     func onSelectSpeedPlayback() {
         presenter?.onSelectSpeedPlayback()
     }
 }
 
-extension LargeAudioPlayerPresentationAdapter: AudioPlayerObserver {
+private extension LargeAudioPlayerPresentationAdapter {
 
-    func receive(_ playerState: PlayerState) {
+    func updatePlayerState(_ playerState: PlayerState) {
         switch playerState {
         case .noPlayingItem:
             break
@@ -47,16 +58,12 @@ extension LargeAudioPlayerPresentationAdapter: AudioPlayerObserver {
         }
     }
     
-    func prepareForSeek(_ progress: AudioPlayerModule.PlayingItem.Progress) {
-        DispatchQueue.immediateWhenOnMainQueueScheduler.schedule { [weak self] in
-            self?.presenter?.didReceiveFutureProgressAfterSeek(with: progress)
-        }
+    func handleReceivedData(playingItem: PlayingItem) {
+        self.presenter?.didReceivePlayerState(with: playingItem)
+        self.thumbnaiSourceDelegate?.didUpdateSourceURL(playingItem.episode.thumbnail)
     }
     
-    private func handleReceivedData(playingItem: PlayingItem) {
-        DispatchQueue.immediateWhenOnMainQueueScheduler.schedule { [weak self] in
-            self?.presenter?.didReceivePlayerState(with: playingItem)
-            self?.thumbnaiSourceDelegate?.didUpdateSourceURL(playingItem.episode.thumbnail)
-        }
+    func prepareForSeek(_ progress: AudioPlayerModule.PlayingItem.Progress) {
+        self.presenter?.didReceiveFutureProgressAfterSeek(with: progress)
     }
 }

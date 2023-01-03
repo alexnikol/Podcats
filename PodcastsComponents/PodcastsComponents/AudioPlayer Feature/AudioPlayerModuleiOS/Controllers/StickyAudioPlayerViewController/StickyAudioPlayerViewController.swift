@@ -34,10 +34,6 @@ public class StickyAudioPlayerViewController: UIViewController {
         delegate?.onOpen()
     }
     
-    deinit {
-        delegate?.onClose()
-    }
-    
     @IBAction public func playToggleTap(_ sender: Any) {
         guard let controlsDelegate = controlsDelegate else { return }
         controlsDelegate.isPlaying ? controlsDelegate.pause() : controlsDelegate.play()

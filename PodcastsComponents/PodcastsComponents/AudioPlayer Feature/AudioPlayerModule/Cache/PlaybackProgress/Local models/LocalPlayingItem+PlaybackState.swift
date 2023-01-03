@@ -3,7 +3,7 @@
 import Foundation
 
 public extension LocalPlayingItem {
-    enum PlaybackState: Equatable {
+    enum PlaybackState: Int, Equatable {
         case playing
         case pause
         case loading

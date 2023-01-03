@@ -3,7 +3,7 @@
 import Foundation
 import PodcastsGenresList
 
-class InMemoryGenresStore: GenresStore {
+final class InMemoryGenresStore: GenresStore {
     struct GenresCache {
         let genres: [LocalGenre]
         let timestamp: Date

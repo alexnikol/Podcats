@@ -125,7 +125,7 @@ final class LoadGenresFromCacheUseCaseTests: XCTestCase {
         XCTAssertEqual(store.receivedMessages, [.retrieve])
     }
     
-    func test_load_doesnNotDeliverResultAfterSUTInstanceHasBeenDeallocated() {
+    func test_load_doesNotDeliverResultAfterSUTInstanceHasBeenDeallocated() {
         let store = GenresStoreSpy()
         var sut: LocalGenresLoader? = LocalGenresLoader(store: store, currentDate: Date.init)
         

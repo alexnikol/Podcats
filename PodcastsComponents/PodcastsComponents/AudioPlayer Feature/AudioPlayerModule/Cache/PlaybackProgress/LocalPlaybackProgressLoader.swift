@@ -3,17 +3,26 @@
 import Foundation
 
 public final class LocalPlaybackProgressLoader {
-    public typealias SaveResult = Error?
-    
     private let store: PlaybackProgressStore
     private let currentDate: () -> Date
+    private let cachePolicy = PlaybackProgressCachePolicy()
     
     public init(store: PlaybackProgressStore, currentDate: @escaping () -> Date) {
         self.store = store
         self.currentDate = currentDate
     }
+}
+
+extension LocalPlaybackProgressLoader: PlaybackProgressCache {
     
-    public func save(_ playingItem: AudioPlayerModule.PlayingItem, completion: @escaping (SaveResult) -> Void) {
+    public typealias SaveResult = PlaybackProgressCache.SaveResult
+    
+    public func save(_ playingItem: PlayingItem, completion: @escaping (SaveResult) -> Void) {
+        guard cachePolicy.isCacheAvailable(with: playingItem) else {
+            completion(nil)
+            return
+        }
+        
         store.deleteCachedPlayingItem(completion: { [weak self] deletion in
             guard let self = self else { return }
             
@@ -27,8 +36,11 @@ public final class LocalPlaybackProgressLoader {
     
     private func cache(_ playingItem: PlayingItem, completion: @escaping (SaveResult) -> Void) {
         self.store.insert(playingItem.toLocal(), timestamp: currentDate(), completion: { [weak self] insertionError in
-            guard self != nil else { return }
+            guard let self = self else { return }
             
+            if insertionError == nil {
+                self.cachePolicy.saveSuccessfullyCachedItem(playingItem)
+            }
             completion(insertionError)
         })
     }

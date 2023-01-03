@@ -21,10 +21,17 @@ final class RootComposer {
         httpClient: HTTPClient,
         localGenresLoader: LocalGenresLoader,
         audioPlayer: AudioPlayer,
-        audioPlayerStatePublisher: AudioPlayerStatePublisher
+        audioPlayerStatePublishers: AudioPlayerStatePublishers,
+        playbackProgressCache: PlaybackProgressCache,
+        localPlaybackProgressLoader: @escaping () -> LocalPlaybackProgressLoader.Publisher
     ) -> UIViewController {
         let tabBarPresenter = RootTabBarPresenter()
-        let tabBarPresentationAdapter = RootTabBarPresentationAdapter(statePublisher: audioPlayerStatePublisher)
+        let tabBarPresentationAdapter = RootTabBarPresentationAdapter(
+            audioPlayer: audioPlayer,
+            audioPlayerStatePublishers: audioPlayerStatePublishers,
+            playbackProgressCache: playbackProgressCache,
+            playbackProgressLoader: localPlaybackProgressLoader
+        )
         tabBarPresentationAdapter.presenter = tabBarPresenter
         
         let exploreNavigation = UINavigationController()
@@ -61,7 +68,7 @@ final class RootComposer {
         
         var largePlayerControlDelegate: LargePlayerControlDelegate?
         let stickyPlayer = StickyAudioPlayerUIComposer.playerWith(
-            statePublisher: audioPlayerStatePublisher,
+            audioPlayerStatePublisher: audioPlayerStatePublishers.audioPlayerStatePublisher,
             controlsDelegate: audioPlayer,
             imageLoader: episodeThumbnailLoaderService.makeRemotePodcastImageDataLoader(for:),
             onPlayerOpen: {
@@ -79,7 +86,7 @@ final class RootComposer {
             httpClient: httpClient,
             tabbarController: rootTabBarController,
             audioPlayer: audioPlayer,
-            audioPlayerStatePublisher: audioPlayerStatePublisher
+            audioPlayerStatePublishers: audioPlayerStatePublishers
         )
         largePlayerControlDelegate = rootCoordinator
         exploreCoordinator.largePlayerControlDelegate = largePlayerControlDelegate

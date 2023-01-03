@@ -77,8 +77,8 @@ final class LargeAudioPlayerUIIntegrationTests: XCTestCase {
     }
     
     func test_rendersState_receiveCurrentPlayingStateWhenPlayerCreatedWhenCurrentPlayerItemAlreadyPlaying() {
-        let sharedPublisher = AudioPlayerStatePublisher()
-        var sut1: SUT? = makeSUT(statePublisher: sharedPublisher)
+        let sharedPublisher = AudioPlayerStatePublishers(playbackProgressCache: PlaybackProgressCacheDummy())
+        var sut1: SUT? = makeSUT(audioPlayerstatePublishers: sharedPublisher)
         sut1?.sut.loadViewIfNeeded()
         
         let playingItem = makePlayingItem()
@@ -87,7 +87,7 @@ final class LargeAudioPlayerUIIntegrationTests: XCTestCase {
         
         sut1 = nil
         
-        let (sut2, _, _) = makeSUT(statePublisher: sharedPublisher)
+        let (sut2, _, _) = makeSUT(audioPlayerstatePublishers: sharedPublisher)
         sut2.loadViewIfNeeded()
         
         assertThat(sut2, isRendering: playingItem)
@@ -114,24 +114,24 @@ final class LargeAudioPlayerUIIntegrationTests: XCTestCase {
                              controlsDelegate: AudioPlayerControlsSpy)
     
     private func makeSUT(
-        statePublisher: AudioPlayerStatePublisher = AudioPlayerStatePublisher(),
+        audioPlayerstatePublishers: AudioPlayerStatePublishers = AudioPlayerStatePublishers(playbackProgressCache: PlaybackProgressCacheDummy()),
         file: StaticString = #file,
         line: UInt = #line
     ) -> SUT {
         let controlsSpy = AudioPlayerControlsSpy()
         let audioPlayer = AudioPlayerClientDummy()
         let sut = LargeAudioPlayerUIComposer.playerWith(
-            statePublisher: statePublisher,
+            audioPlayerstatePublishers: audioPlayerstatePublishers,
             controlsDelegate: controlsSpy,
             imageLoader: { _ in
                 Empty().eraseToAnyPublisher()
             }
         )
         trackForMemoryLeaks(sut, file: file, line: line)
-        trackForMemoryLeaks(statePublisher, file: file, line: line)
+        trackForMemoryLeaks(audioPlayerstatePublishers, file: file, line: line)
         trackForMemoryLeaks(controlsSpy, file: file, line: line)
         trackForMemoryLeaks(audioPlayer, file: file, line: line)
-        audioPlayer.delegate = statePublisher
+        audioPlayer.delegate = audioPlayerstatePublishers
         return (sut, audioPlayer, controlsSpy)
     }
     

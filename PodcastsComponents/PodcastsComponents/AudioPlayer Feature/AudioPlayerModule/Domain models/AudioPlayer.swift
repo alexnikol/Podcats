@@ -16,4 +16,5 @@ public protocol AudioPlayer: AudioPlayerControlsDelegate {
     var delegate: AudioPlayerOutputDelegate? { get set }
     
     func startPlayback(fromURL url: URL, withMeta meta: Meta)
+    func preparePlayback(fromURL url: URL, withPlayingItem playingItem: PlayingItem)
 }

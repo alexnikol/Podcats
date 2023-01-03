@@ -6,7 +6,7 @@ import AudioPlayerModule
 import SharedComponentsiOSModule
 import AudioPlayerModuleiOS
 
-class LargeAudioPlayerViewAdapter {
+final class LargeAudioPlayerViewAdapter {
     private weak var controller: LargeAudioPlayerViewController?
     private var onSpeedPlaybackChange: ((PlaybackSpeed) -> Void)?
     weak var presenter: LargeAudioPlayerPresenter?

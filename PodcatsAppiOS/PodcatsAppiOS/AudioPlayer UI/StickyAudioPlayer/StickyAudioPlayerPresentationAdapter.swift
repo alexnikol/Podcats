@@ -1,19 +1,21 @@
 // Copyright © 2022 Almost Engineer. All rights reserved.
 
 import Foundation
+import Combine
 import SharedComponentsiOSModule
 import AudioPlayerModule
 import AudioPlayerModuleiOS
 
 class StickyAudioPlayerPresentationAdapter {
-    private let statePublisher: AudioPlayerStatePublisher
-    private var subscription: AudioPlayerStateSubscription?
+    private let audioPlayerStatePublisher: AudioPlayerStatePublishers.AudioPlayerStatePublisher
     private var thumbnaiSourceDelegate: ThumbnailSourceDelegate?
+    private var subscriptions = Set<AnyCancellable>()
     var presenter: StickyAudioPlayerPresenter?
     var onPlayerOpenAction: () -> Void
     
-    init(statePublisher: AudioPlayerStatePublisher, thumbnaiSourceDelegate: ThumbnailSourceDelegate, onPlayerOpen: @escaping () -> Void) {
-        self.statePublisher = statePublisher
+    init(audioPlayerStatePublisher: AudioPlayerStatePublishers.AudioPlayerStatePublisher,
+         thumbnaiSourceDelegate: ThumbnailSourceDelegate, onPlayerOpen: @escaping () -> Void) {
+        self.audioPlayerStatePublisher = audioPlayerStatePublisher
         self.onPlayerOpenAction = onPlayerOpen
         self.thumbnaiSourceDelegate = thumbnaiSourceDelegate
     }
@@ -26,17 +28,19 @@ extension StickyAudioPlayerPresentationAdapter: StickyAudioPlayerViewDelegate {
     }
     
     func onOpen() {
-        subscription = statePublisher.subscribe(observer: self)
-    }
-    
-    func onClose() {
-        subscription?.unsubscribe()
+        audioPlayerStatePublisher
+            .dispatchOnMainQueue()
+            .sink(
+                receiveValue: { [weak self] playerState in
+                    self?.updatePlayerState(playerState)
+                })
+            .store(in: &subscriptions)
     }
 }
 
-extension StickyAudioPlayerPresentationAdapter: AudioPlayerObserver {
+private extension StickyAudioPlayerPresentationAdapter {
 
-    func receive(_ playerState: PlayerState) {
+    func updatePlayerState(_ playerState: PlayerState) {
         switch playerState {
         case .noPlayingItem:
             break
@@ -49,12 +53,8 @@ extension StickyAudioPlayerPresentationAdapter: AudioPlayerObserver {
         }
     }
     
-    func prepareForSeek(_ progress: AudioPlayerModule.PlayingItem.Progress) {}
-    
     private func handleReceivedData(playingItem: PlayingItem) {
-        DispatchQueue.immediateWhenOnMainQueueScheduler.schedule { [weak self] in
-            self?.presenter?.didReceivePlayerState(with: playingItem)
-            self?.thumbnaiSourceDelegate?.didUpdateSourceURL(playingItem.episode.thumbnail)
-        }
+        self.presenter?.didReceivePlayerState(with: playingItem)
+        self.thumbnaiSourceDelegate?.didUpdateSourceURL(playingItem.episode.thumbnail)
     }
 }

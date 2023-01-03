@@ -56,10 +56,6 @@ public final class LargeAudioPlayerViewController: UIViewController {
         self.thumbnailViewController = thumbnailViewController
     }
     
-    deinit {
-        delegate?.onClose()
-    }
-    
     // MARK: - Lifecycle
     
     override public func viewDidLoad() {
@@ -173,10 +169,10 @@ public final class LargeAudioPlayerViewController: UIViewController {
     
     private func updateThumbnail(state: PlaybackStateViewModel) {
         switch state {
-        case .playing:
+        case .playing, .loading:
             thumbnailIViewSideCNST.constant = Defaults.ThumbnailSize.activeSideSize
             
-        case .pause, .loading:
+        case .pause:
             thumbnailIViewSideCNST.constant = Defaults.ThumbnailSize.inactiveSideSize
         }
         UIView.animate(

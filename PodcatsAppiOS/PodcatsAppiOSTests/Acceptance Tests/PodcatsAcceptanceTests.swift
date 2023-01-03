@@ -5,6 +5,7 @@ import UIKit
 import HTTPClient
 import SharedComponentsiOSModule
 import PodcastsGenresList
+import AudioPlayerModule
 import PodcastsGenresListiOS
 import PodcastsModuleiOS
 import AudioPlayerModuleiOS
@@ -14,14 +15,14 @@ import SearchContentModuleiOS
 final class PodcatsAcceptanceTests: XCTestCase {
     
     func test_onLaunch_displaysRemoteGenresWhenCustomerHasConnectivityAndEmptyCache() {
-        let rootTabBar = launch(store: InMemoryGenresStore.empty, httpClient: HTTPClientStub.online(response))
+        let rootTabBar = launch(genresStore: InMemoryGenresStore.empty, httpClient: HTTPClientStub.online(response))
         let genres = genres(from: rootTabBar)
         
         XCTAssertEqual(genres.numberOfRenderedGenresViews(), 2)
     }
     
     func test_onLaunch_displaysNoGenresWhenCustomersHasNoConnectivityAndEmptyCache() {
-        let rootTabBar = launch(store: InMemoryGenresStore.empty, httpClient: HTTPClientStub.offline)
+        let rootTabBar = launch(genresStore: InMemoryGenresStore.empty, httpClient: HTTPClientStub.offline)
         let genres = genres(from: rootTabBar)
         
         XCTAssertEqual(genres.numberOfRenderedGenresViews(), 0)
@@ -29,17 +30,43 @@ final class PodcatsAcceptanceTests: XCTestCase {
     
     func test_onLaunch_displaysCachedGenresWhenCustomerHasConnectivityAndNonExpiredCache() {
         let sharedStore = InMemoryGenresStore.withNonExpiredFeedCache
-        let rootTabBar = launch(store: sharedStore, httpClient: HTTPClientStub.offline)
+        let rootTabBar = launch(genresStore: sharedStore, httpClient: HTTPClientStub.offline)
         let genres = genres(from: rootTabBar)
         
         XCTAssertNotNil(sharedStore.cache)
         XCTAssertEqual(genres.numberOfRenderedGenresViews(), 1)
     }
     
+    func test_onLaunch_doesNotDisplaysProgressPlaybackOnEmptyProgressCache() {
+        let sharedStore = InMemoryGenresStore.withNonExpiredFeedCache
+        let rootTabBar = launch(
+            genresStore: sharedStore,
+            playbackProgressStore: InMemoryPlaybackProgressStore.empty,
+            httpClient: HTTPClientStub.online(response)
+        )
+        
+        let stickyPlayer = stickyPlayer(fromRoot: rootTabBar)
+        
+        XCTAssertNil(stickyPlayer?.episodeTitleText())
+    }
+    
+    func test_onLaunch_displaysCachedProgressPlayback() {
+        let sharedStore = InMemoryGenresStore.withNonExpiredFeedCache
+        let rootTabBar = launch(
+            genresStore: sharedStore,
+            playbackProgressStore: InMemoryPlaybackProgressStore.withNonEmptyCache,
+            httpClient: HTTPClientStub.online(response)
+        )
+        
+        let stickyPlayer = stickyPlayer(fromRoot: rootTabBar)
+        
+        XCTAssertEqual(stickyPlayer?.episodeTitleText(), "Any Episode Title")
+    }
+    
     func test_onEnteringBackground_deletesExpiredGenresCache() {
         let store = InMemoryGenresStore.withExpiredFeedCache
         
-        enterBackground(with: store)
+        enterBackground(with: store, playbackProgressStore: InMemoryPlaybackProgressStore.empty)
         
         XCTAssertNil(store.cache, "Expected to delete expired cache")
     }
@@ -47,7 +74,7 @@ final class PodcatsAcceptanceTests: XCTestCase {
     func test_onEnteringBackground_keepsNonExpiredFeedCache() {
         let store = InMemoryGenresStore.withNonExpiredFeedCache
         
-        enterBackground(with: store)
+        enterBackground(with: store, playbackProgressStore: InMemoryPlaybackProgressStore.empty)
         
         XCTAssertNotNil(store.cache, "Expected to keep non expired cache")
     }
@@ -76,7 +103,7 @@ final class PodcatsAcceptanceTests: XCTestCase {
     }
     
     func test_onLaunchSearch_displaysSearchScreen() {
-        let rootTabBar = launch(store: InMemoryGenresStore.empty, httpClient: HTTPClientStub.online(response))
+        let rootTabBar = launch(genresStore: InMemoryGenresStore.empty, httpClient: HTTPClientStub.online(response))
         let (generalSearch, typeaheadSearch) = search(from: rootTabBar)
         
         XCTAssertEqual(generalSearch.numberOfRenderedSearchedEpisodesViews(), 0)
@@ -86,7 +113,7 @@ final class PodcatsAcceptanceTests: XCTestCase {
     }
     
     func test_onLaunchSearch_displaysTypeaheadSearchResultOnTyping() {
-        let rootTabBar = launch(store: InMemoryGenresStore.empty, httpClient: HTTPClientStub.online(response))
+        let rootTabBar = launch(genresStore: InMemoryGenresStore.empty, httpClient: HTTPClientStub.online(response))
         let (generalSearch, typeaheadSearch) = search(from: rootTabBar)
         let searchController = generalSearch.navigationItem.searchController
         
@@ -97,7 +124,7 @@ final class PodcatsAcceptanceTests: XCTestCase {
     }
     
     func test_onLaunchSearch_displaysGeneralSearchResultOnTermSelection() {
-        let rootTabBar = launch(store: InMemoryGenresStore.empty, httpClient: HTTPClientStub.online(response))
+        let rootTabBar = launch(genresStore: InMemoryGenresStore.empty, httpClient: HTTPClientStub.online(response))
         let (generalSearch, typeaheadSearch) = search(from: rootTabBar)
         let searchController = generalSearch.navigationItem.searchController
         
@@ -111,7 +138,7 @@ final class PodcatsAcceptanceTests: XCTestCase {
     }
     
     func test_onSearchedEpisodeSelection_displaysAudioPlayer() {
-        let rootTabBar = launch(store: InMemoryGenresStore.empty, httpClient: HTTPClientStub.online(response))
+        let rootTabBar = launch(genresStore: InMemoryGenresStore.empty, httpClient: HTTPClientStub.online(response))
         let (generalSearch, typeaheadSearch) = search(from: rootTabBar)
         let searchController = generalSearch.navigationItem.searchController
         
@@ -127,7 +154,7 @@ final class PodcatsAcceptanceTests: XCTestCase {
     }
     
     func test_onSearchedPodcastSelection_displaysPodcastDetails() {
-        let rootTabBar = launch(store: InMemoryGenresStore.empty, httpClient: HTTPClientStub.online(response))
+        let rootTabBar = launch(genresStore: InMemoryGenresStore.empty, httpClient: HTTPClientStub.online(response))
         let (generalSearch, typeaheadSearch) = search(from: rootTabBar)
         let searchController = generalSearch.navigationItem.searchController
         
@@ -142,7 +169,7 @@ final class PodcatsAcceptanceTests: XCTestCase {
     }
     
     func test_onSearchedPodcastDetailsEpisodeSelection_displaysLargePlayerFromEpisodeInsideSearchedPodcast() {
-        let rootTabBar = launch(store: InMemoryGenresStore.empty, httpClient: HTTPClientStub.online(response))
+        let rootTabBar = launch(genresStore: InMemoryGenresStore.empty, httpClient: HTTPClientStub.online(response))
         let (generalSearch, typeaheadSearch) = search(from: rootTabBar)
         let searchController = generalSearch.navigationItem.searchController
         
@@ -162,12 +189,13 @@ final class PodcatsAcceptanceTests: XCTestCase {
     // MARK: - Helpers
     
     private func launch(
-        store: GenresStore,
+        genresStore: GenresStore,
+        playbackProgressStore: PlaybackProgressStore = InMemoryPlaybackProgressStore.empty,
         httpClient: HTTPClient,
         file: StaticString = #file,
         line: UInt = #line
     ) -> RootTabBarController {
-        let sut = SceneDelegate(httpClient: httpClient, genresStore: store)
+        let sut = SceneDelegate(httpClient: httpClient, genresStore: genresStore, playbackProgressStore: playbackProgressStore)
         sut.window = UIWindow()
         sut.configureWindow()
         
@@ -181,8 +209,8 @@ final class PodcatsAcceptanceTests: XCTestCase {
         return genres
     }
     
-    private func enterBackground(with store: InMemoryGenresStore) {
-        let sut = SceneDelegate(httpClient: HTTPClientStub.offline, genresStore: store)
+    private func enterBackground(with store: InMemoryGenresStore, playbackProgressStore: PlaybackProgressStore) {
+        let sut = SceneDelegate(httpClient: HTTPClientStub.offline, genresStore: store, playbackProgressStore: playbackProgressStore)
         sut.sceneWillResignActive(UIApplication.shared.connectedScenes.first!)
     }
     
@@ -192,7 +220,7 @@ final class PodcatsAcceptanceTests: XCTestCase {
     }
     
     private func showBestPodcasts() -> ListViewController {
-        let rootTabBar = launch(store: InMemoryGenresStore.empty, httpClient: HTTPClientStub.online(response))
+        let rootTabBar = launch(genresStore: InMemoryGenresStore.empty, httpClient: HTTPClientStub.online(response))
         let genres = genres(from: rootTabBar)
         
         genres.simulateTapOnGenre(at: 0)
@@ -232,6 +260,10 @@ final class PodcatsAcceptanceTests: XCTestCase {
         
         let nav = generalSearchResult.navigationController
         return nav?.presentedViewController as! LargeAudioPlayerViewController
+    }
+    
+    private func stickyPlayer(fromRoot root: RootTabBarController) -> StickyAudioPlayerViewController? {
+        root.stickyAudioPlayerController
     }
     
     private func search(

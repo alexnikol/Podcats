@@ -4,6 +4,5 @@ import Foundation
 
 public protocol LargeAudioPlayerViewDelegate {
     func onOpen()
-    func onClose()
     func onSelectSpeedPlayback()
 }

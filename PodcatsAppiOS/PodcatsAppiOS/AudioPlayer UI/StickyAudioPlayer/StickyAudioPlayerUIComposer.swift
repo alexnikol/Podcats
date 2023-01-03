@@ -11,7 +11,7 @@ import AudioPlayerModuleiOS
 public enum StickyAudioPlayerUIComposer {
     
     public static func playerWith(
-        statePublisher: AudioPlayerStatePublisher,
+        audioPlayerStatePublisher: AudioPlayerStatePublishers.AudioPlayerStatePublisher,
         controlsDelegate: AudioPlayerControlsDelegate,
         imageLoader: @escaping (URL) -> AnyPublisher<Data, Error>,
         onPlayerOpen: @escaping () -> Void
@@ -19,7 +19,7 @@ public enum StickyAudioPlayerUIComposer {
         let (thumbnailViewController, thumbnailSourceDelegate) = ThumbnailUIComposer.composeThumbnailWithDynamicImageLoader(imageLoader: imageLoader)
         
         let presentationAdapter = StickyAudioPlayerPresentationAdapter(
-            statePublisher: statePublisher,
+            audioPlayerStatePublisher: audioPlayerStatePublisher,
             thumbnaiSourceDelegate: thumbnailSourceDelegate,
             onPlayerOpen: onPlayerOpen
         )

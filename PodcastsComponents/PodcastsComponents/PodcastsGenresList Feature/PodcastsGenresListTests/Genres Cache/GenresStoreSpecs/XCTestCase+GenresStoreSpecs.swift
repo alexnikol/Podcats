@@ -10,7 +10,7 @@ extension GenresStoreSpecs where Self: XCTestCase {
     }
     
     func assertThatRetrieveHasNoSideEffectsOnEmptyCache(on sut: GenresStore, file: StaticString = #file, line: UInt = #line) {
-        expect(sut, toRetrieve: .empty, file: file, line: line)
+        expect(sut, toRetrieveTwice: .empty, file: file, line: line)
     }
     
     func assertThatretrieveDeliversFoundValuesOnNonEmptyCache(on sut: GenresStore, file: StaticString = #file, line: UInt = #line) {
@@ -64,7 +64,7 @@ extension GenresStoreSpecs where Self: XCTestCase {
     func assertThatDeleteHasNoSideEffectsOnEmptyCache(on sut: GenresStore, file: StaticString = #file, line: UInt = #line) {
         deleteCache(from: sut)
         
-        expect(sut, toRetrieve: .empty, file: file, line: line)
+        expect(sut, toRetrieveTwice: .empty, file: file, line: line)
     }
     
     func assertThatDeleteDeliversNoErrorOnNonEmptyCache(on sut: GenresStore, file: StaticString = #file, line: UInt = #line) {
@@ -78,7 +78,7 @@ extension GenresStoreSpecs where Self: XCTestCase {
         insert((uniqueGenres().local, Date()), to: sut)
         deleteCache(from: sut)
         
-        expect(sut, toRetrieve: .empty, file: file, line: line)
+        expect(sut, toRetrieveTwice: .empty, file: file, line: line)
     }
     
     func assertThatStoreSideEffectsRunSerially(on sut: GenresStore, file: StaticString = #file, line: UInt = #line) {

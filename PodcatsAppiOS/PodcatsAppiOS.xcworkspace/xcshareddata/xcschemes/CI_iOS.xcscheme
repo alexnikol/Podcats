@@ -439,6 +439,17 @@
                ReferencedContainer = "container:../PodcastsComponents/PodcastsComponents/PodcastsComponents.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            testExecutionOrdering = "random">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8D362631295DC6B800967634"
+               BuildableName = "PlaybackProgressCacheIntegrationTests.xctest"
+               BlueprintName = "PlaybackProgressCacheIntegrationTests"
+               ReferencedContainer = "container:../PodcastsComponents/PodcastsComponents/PodcastsComponents.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction
